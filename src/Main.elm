@@ -1,18 +1,16 @@
 module Main exposing (main)
 
+import Color as C
 import Html
 import Lang exposing (..)
 
 
 main =
-    Html.ul []
-        [ item img1
-        , item img2
+    Html.div []
+        [ display img1
+        , display img2
+        , display img3
         ]
-
-
-item i =
-    Html.li [] [ Html.pre [] [ Html.text <| display i ] ]
 
 
 img1 =
@@ -22,25 +20,57 @@ img1 =
 
         sq =
             square identity tp
+
+        colorize x y ( c, _, _ ) =
+            let
+                fg =
+                    case c of
+                        '#' ->
+                            if modBy 3 (x + y) == 0 then
+                                C.red
+
+                            else
+                                C.blue
+
+                        '.' ->
+                            C.yellow
+
+                        '*' ->
+                            C.green
+
+                        _ ->
+                            C.white
+            in
+            ( c, fg, C.black )
+
+        build =
+            sq << grow << sq << sq << growH
     in
-    sq <|
-        grow <|
-            sq <|
-                sq <|
-                    growH
-                        [ " .#"
-                        , "*  "
-                        ]
+    map colorize <|
+        build <|
+            fromStrings
+                [ " .#"
+                , "*  "
+                ]
 
 
 img2 =
     let
+        navy =
+            C.rgb255 0 0 80
+
+        ch f c =
+            ( c, f, navy )
+
+        sp =
+            ch C.white ' '
+
         clear =
             \i ->
                 fill i
-                    [ ".  "
-                    , " * "
-                    , "  ."
+                    [ [ ch C.white '.', sp, sp ]
+                    , [ sp, ch C.yellow '*', sp ]
+                    , [ sp, sp, ch (C.rgb 0 80 80) '.' ]
                     ]
 
         cbrd =
@@ -51,10 +81,40 @@ img2 =
     in
     growH <|
         step <|
-            step
-                [ "/\\"
-                , "\\/"
-                ]
+            step <|
+                uniform C.green navy <|
+                    fromStrings
+                        [ "/\\"
+                        , "\\/"
+                        ]
+
+
+img3 =
+    let
+        fromPalette i =
+            case modBy 4 i of
+                0 ->
+                    C.black
+
+                1 ->
+                    C.red
+
+                2 ->
+                    C.yellow
+
+                _ ->
+                    C.white
+
+        blank =
+            grow <| grow <| grow <| grow <| fromStrings [ " " ]
+
+        paint x y _ =
+            ( '*'
+            , fromPalette (modBy 2 x)
+            , fromPalette (y + x)
+            )
+    in
+    square identity mirror <| map paint <| blank
 
 
 square f1 f2 =

@@ -1,6 +1,8 @@
 # elm-charart
 
-A simple combinator language the ASCII Art pattern generation. It generates stuff like that:
+This is small set of combinators that generate and colorize the ASCII Art patterns.
+
+A typical pattern looks like this one ([more examples in colour](https://astynax.github.io/elm-charart)):
 
 ```text
 ..    ..    ..    ..    ..    ....    ..//\\..  ..    ..    ..

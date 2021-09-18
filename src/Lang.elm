@@ -1,10 +1,20 @@
 module Lang exposing (..)
 
+import Color exposing (Color)
+import Html exposing (Html)
+import Html.Attributes as Attributes exposing (style)
 import String
 
 
+type alias Cell = ( Char, Color, Color )
+
+
+type alias Line =
+    List Cell
+
+
 type alias Image =
-    List String
+    List Line
 
 
 type alias Op =
@@ -15,9 +25,31 @@ type alias Combiner =
     Image -> Image -> Image
 
 
-display : Image -> String
+fromStrings : List String -> Image
+fromStrings =
+    List.map <|
+        List.map (\c -> ( c, Color.black, Color.white ))
+            << String.toList
+
+
+display : Image -> Html a
 display =
-    String.join "\n"
+    Html.pre [] << List.intersperse (Html.br [] []) << List.map displayRow
+
+
+displayRow : Line -> Html a
+displayRow =
+    Html.span [] << List.map displayCell
+
+
+displayCell : Cell -> Html a
+displayCell ( ch, fg, bg ) =
+    Html.span
+        [ style "background-color" (Color.toCssString bg)
+        , style "color" (Color.toCssString fg)
+        ]
+        [ Html.text <| String.fromChar ch
+        ]
 
 
 flip : Op
@@ -27,12 +59,12 @@ flip =
 
 mirror : Op
 mirror =
-    List.map String.reverse
+    List.map List.reverse
 
 
 aside : Combiner
 aside =
-    List.map2 String.append
+    List.map2 List.append
 
 
 atop : Combiner
@@ -47,7 +79,7 @@ fork c o1 o2 i =
 
 growH : Op
 growH =
-    List.map (String.fromList << dup << String.toList)
+    List.map dup
 
 
 growV : Op
@@ -61,18 +93,21 @@ grow =
 
 
 fill : Combiner
-fill x y =
-    let
-        z =
-            List.map2
-                (\s1 s2 ->
-                    String.fromList <|
-                        fillUsing (String.toList s1) (String.toList s2)
-                )
-                x
-                y
-    in
-    fillUsing x z
+fill x =
+    fillUsing x << List.map2 fillUsing x
+
+
+map : (Int -> Int -> Cell -> Cell) -> Op
+map f =
+    List.indexedMap <|
+        \y ->
+            List.indexedMap <|
+                \x -> f x y
+
+
+uniform : Color -> Color -> Op
+uniform fg bg =
+    map <| \_ _ (c, _, _) -> ( c, fg, bg )
 
 
 
